@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_executable(fake_vm vm.c)
 
-add_executable(fake_asm asm.c strtools.c strtools.h argtools.h mingw_stdio_fix.h asm/tokenizer.h)
+add_executable(fake_asm asm.c strtools.c)
 
 add_executable(fake_tests check.cpp)
 

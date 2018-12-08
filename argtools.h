@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-#define CHECK(cond, ...) \
+#define CHECK_FALL(cond, ...) \
     if (!(cond)) \
     { \
         printf(__VA_ARGS__); \
