@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_executable(fake_vm vm.c)
 
-add_executable(fake_asm asm.c)
+add_executable(fake_asm asm.c strtools.c strtools.h argtools.h mingw_stdio_fix.h asm/tokenizer.h)
 
 add_executable(fake_tests check.cpp)
 
@@ -28,7 +28,5 @@ add_custom_target(asm
         CC=${CMAKE_C_COMPILER}
         CXX=${CMAKE_CXX_COMPILER}
         LD=${CMAKE_CXX_COMPILER}
-        #FLAGS=-L"C:/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64/x86_64-w64-mingw32/lib"
-        #INCLUDES=-I"C:/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64/x86_64-w64-mingw32/include"
         GTEST=C:/Users/aidar.islamov/Downloads/googletest-release-1.8.1/googletest
         OUTDIR=${BIN_DIR})
