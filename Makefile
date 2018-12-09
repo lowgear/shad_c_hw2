@@ -1,4 +1,4 @@
-LD=/usr/bin/ld
+LD=/usr/bin/g++
 CXX=/usr/bin/g++
 CC=/usr/bin/gcc
 
@@ -33,26 +33,17 @@ vm: vm.o strtools.o
 vm.o: $(SRCD)/vm.c
 	$(COMPILE_C_SRC)
 
-GTEST_SRC=$(GTEST)/src/*.cc
-GTEST_OBJ=$(GTEST_SRC:.cc=.o)
-
-$(GTEST_OBJ): $(GTEST_SRC)
-#	$(COMPILE_CXX_SRC)
-
-check: check.o $(GTEST_OBJ)
+check: check.o gtest-all.o gtest_main.o
 	$(LINK_EXECUTABLE)
-
-#check: check.o $(GTEST)/src/gtest-all.o $(GTEST)/src/gtest_main.o
-#	$(LINK_EXECUTABLE)
 
 check.o: $(SRCD)/check.cpp
 	$(COMPILE_CXX_SRC)
 
-$(GTEST)/src/gtest-all.o: $(GTEST)/src/gtest-all.cc
-#	$(COMPILE_CXX_SRC)
+gtest-all.o: $(GTEST)/src/gtest-all.cc
+	$(COMPILE_CXX_SRC)
 
-$(GTEST)/src/gtest_main.o: $(GTEST)/src/gtest_main.cc
-#	$(COMPILE_CXX_SRC)
+gtest_main.o: $(GTEST)/src/gtest_main.cc
+	$(COMPILE_CXX_SRC)
 
 strtools.o: $(SRCD)/strtools.c
 	$(COMPILE_C_SRC)
