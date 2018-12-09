@@ -1,8 +1,7 @@
-#CC=C:/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64/bin/gcc.exe
-#CXX=C:/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64/bin/g++.exe
-#LD=C:/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64/bin/ld.exe
+SRCD="."
+RM_ALL=rm -rf
 
-INCLUDES=-I$(GTEST) -I$(GTEST)/include
+INCLUDES=-I$(GTEST) -I$(GTEST)/include -I$(SRCD)
 WARN_OPTS=-Wall -Werror -pedantic
 LDFLAGS=$(FLAGS) -lm -lpthread
 
@@ -21,26 +20,29 @@ all: asm vm check;
 asm: asm.o strtools.o
 	$(LINK_EXECUTABLE)
 
-asm.o: asm.c
+asm.o: $(SRCD)/asm.c
 	$(COMPILE_C_SRC)
 
 vm: vm.o strtools.o
 	$(LINK_EXECUTABLE)
 
-vm.o: vm.c
+vm.o: $(SRCD)/vm.c
 	$(COMPILE_C_SRC)
 
-check: check.o $(GTEST)/src/gtest-all.o $(GTEST)/src/gtest_main.o
+check: check.o gtest-all.o gtest_main.o
 	$(LINK_EXECUTABLE)
 
-check.o: check.cpp
+check.o: $(SRCD)/check.cpp
 	$(COMPILE_CXX_SRC)
 
-$(GTEST)/src/gtest-all.o: $(GTEST)/src/gtest-all.cc
+gtest-all.o: $(GTEST)/src/gtest-all.cc
 	$(COMPILE_CXX_SRC)
 
-$(GTEST)/src/gtest_main.o: $(GTEST)/src/gtest_main.cc
+gtest_main.o: $(GTEST)/src/gtest_main.cc
 	$(COMPILE_CXX_SRC)
 
-strtools.o: strtools.c
+strtools.o: $(SRCD)/strtools.c
 	$(COMPILE_C_SRC)
+
+clean:
+	$(RM_ALL) *.o asm vm check

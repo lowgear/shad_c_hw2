@@ -1,8 +1,10 @@
+#include "mingw_stdio_fix.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <inttypes.h>
-#include "mingw_stdio_fix.h"
+
 #include "strtools.h"
 #include "argtools.h"
 
