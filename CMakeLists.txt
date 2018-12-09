@@ -39,7 +39,7 @@ add_custom_target(All
 
 add_custom_target(check
         WORKING_DIRECTORY ${BUILD_DIR}
-        COMMAND ${MAKE_EXE} kek
+        COMMAND ${MAKE_EXE} check
         CC=${CMAKE_C_COMPILER}
         CXX=${CMAKE_CXX_COMPILER}
         LD=${CMAKE_CXX_COMPILER}
