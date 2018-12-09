@@ -9,7 +9,7 @@
             rv = value; \
             exit; \
         } \
-    } while (0)
+    } while (0);
 
 
 #define CHECK(condition, operation, filename, rv, value, label) \

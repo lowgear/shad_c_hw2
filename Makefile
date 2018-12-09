@@ -61,4 +61,3 @@ TO_DELETE=asm vm check
 
 clean:
 	$(RM_ALL) *.o $(TO_DELETE) $(TO_DELETE:=.exe) $(TO_DELETE:=.bin)
-
