@@ -17,22 +17,22 @@ int main(int argc, char *argv[]) {
     CHECK_FALL(argc == ARGNUM + 1, "Number of arguments should be 3, but got %d", argc - 1)
 
     const char *const inPath = argv[1];
-//    const char *const outPath = argv[2];
+    const char *const outPath = argv[2];
 
     FILE *ifp;
     int rv = 0;
-    CHECK(ifp = fopen(inPath, "r"), "open", inPath, rv, 1, exit);
+    CHECK(ifp = fopen(inPath, "r"), "open", inPath, rv, 1, exit)
     while (!feof(ifp)) {
         char cmd[10];
-        /*int read = */fscanf(ifp, "%s", cmd);
+        int read = fscanf(ifp, "%s", cmd);
 
 
-//        check_eof:
-
+        no_valid_input:
+        CHECK(feof(ifp), "read command", inPath, rv, 2, cleanup)
     }
 
-//    cleanup:
-    ROLLBACK(fclose(ifp) == 0, "close", inPath, rv, 5);
+    cleanup:
+    ROLLBACK(fclose(ifp) == 0, "close", inPath, rv, 5)
     exit:
     return rv;
 }

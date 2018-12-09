@@ -21,54 +21,58 @@ add_executable(fake_tests check.cpp ${GTEST}/src/gtest_main.cc ${GTEST}/src/gtes
 
 #########################################
 # Custom Makefile
+set(BUILD_DIR ${c_asm_vm_SOURCE_DIR}/build)
+
+set(MAKE_EXE C:/GnuWin32/bin/make.exe -f ${c_asm_vm_SOURCE_DIR}/Makefile)
+set(GTEST C:/Users/aidar.islamov/Downloads/googletest-release-1.8.1/googletest)
+set(RM_ALL "del /S /Q")
+
 add_custom_target(All
-        WORKING_DIRECTORY ${c_asm_vm_SOURCE_DIR}/build
-        COMMAND make -C ${c_asm_vm_SOURCE_DIR} all
+        WORKING_DIRECTORY ${BUILD_DIR}
+        COMMAND ${MAKE_EXE} all
         CC=${CMAKE_C_COMPILER}
         CXX=${CMAKE_CXX_COMPILER}
         LD=${CMAKE_CXX_COMPILER}
-        GTEST=C:/Users/aidar.islamov/Downloads/googletest-release-1.8.1/googletest
+        GTEST=${GTEST}
         SRCD=${c_asm_vm_SOURCE_DIR}
-        RM_ALL="del /S")
+        RM_ALL=${RM_ALL})
 
 add_custom_target(check
-        WORKING_DIRECTORY ${c_asm_vm_SOURCE_DIR}/build
-        COMMAND make -C ${c_asm_vm_SOURCE_DIR} check
+        WORKING_DIRECTORY ${BUILD_DIR}
+        COMMAND ${MAKE_EXE} check
         CC=${CMAKE_C_COMPILER}
         CXX=${CMAKE_CXX_COMPILER}
         LD=${CMAKE_CXX_COMPILER}
-        GTEST=C:/Users/aidar.islamov/Downloads/googletest-release-1.8.1/googletest
+        GTEST=${GTEST}
         SRCD=${c_asm_vm_SOURCE_DIR}
-        RM_ALL="del /S")
+        RM_ALL=${RM_ALL})
 
 add_custom_target(asm
-        WORKING_DIRECTORY ${c_asm_vm_SOURCE_DIR}/build
-        COMMAND make -C ${c_asm_vm_SOURCE_DIR} asm
+        WORKING_DIRECTORY ${BUILD_DIR}
+        COMMAND ${MAKE_EXE} asm
         CC=${CMAKE_C_COMPILER}
         CXX=${CMAKE_CXX_COMPILER}
         LD=${CMAKE_CXX_COMPILER}
-        GTEST=C:/Users/aidar.islamov/Downloads/googletest-release-1.8.1/googletest
+        GTEST=${GTEST}
         SRCD=${c_asm_vm_SOURCE_DIR}
-        RM_ALL="del /S")
+        RM_ALL=${RM_ALL})
 
 add_custom_target(vm
-        WORKING_DIRECTORY ${c_asm_vm_SOURCE_DIR}/build
-        COMMAND make -C ${c_asm_vm_SOURCE_DIR} vm
+        WORKING_DIRECTORY ${BUILD_DIR}
+        COMMAND ${MAKE_EXE} vm
         CC=${CMAKE_C_COMPILER}
         CXX=${CMAKE_CXX_COMPILER}
         LD=${CMAKE_CXX_COMPILER}
-        GTEST=C:/Users/aidar.islamov/Downloads/googletest-release-1.8.1/googletest
+        GTEST=${GTEST}
         SRCD=${c_asm_vm_SOURCE_DIR}
-        RM_ALL="del /S")
+        RM_ALL=${RM_ALL})
 
 add_custom_target(Clean
-        WORKING_DIRECTORY ${c_asm_vm_SOURCE_DIR}/build
-        COMMAND make -C ${c_asm_vm_SOURCE_DIR} clean
+        WORKING_DIRECTORY ${BUILD_DIR}
+        COMMAND ${MAKE_EXE} clean
         CC=${CMAKE_C_COMPILER}
         CXX=${CMAKE_CXX_COMPILER}
         LD=${CMAKE_CXX_COMPILER}
-        GTEST=C:/Users/aidar.islamov/Downloads/googletest-release-1.8.1/googletest
+        GTEST=${GTEST}
         SRCD=${c_asm_vm_SOURCE_DIR}
-        RM_ALL="del /S /Q")
-
-add_custom_target(kek COMMAND echo ${c_asm_vm_SOURCE_DIR})
+        RM_ALL=${RM_ALL})
