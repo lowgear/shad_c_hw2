@@ -6,7 +6,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
 set(GTEST C:/Users/aidar.islamov/Downloads/googletest-release-1.8.1/googletest)
 
-include_directories(${GTEST} ${GTEST}/include)
+include_directories(${GTEST} ${GTEST}/include .)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
