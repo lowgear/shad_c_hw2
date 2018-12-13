@@ -11,12 +11,6 @@
     \
     typedef struct V_##T* V_##T##_Ptr;
 
-/*    V_##T##_Ptr Init_V_##T(size_t size) { \
-        V_##T##_Ptr res = malloc(sizeof(struct V_##T) + size * sizeof(T)); \
-        res->size = size; \
-        res->cnt = 0; \
-        return res; \
-    }*/
 
 #define ID(vec, id) ((vec)->array[(id)])
 #define CNT(vec) ((vec)->cnt)

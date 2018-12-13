@@ -10,14 +10,14 @@
 
 struct LabelDesc {
     char *labelName;
-    uint16_t address;
+    int16_t address;
     V_size_t_Ptr instructionIds;
 };
 
 typedef struct LabelDesc *LabelDescPtr;
 DEFINE_VECTOR(LabelDescPtr)
 
-bool addLabelAddress(V_LabelDescPtr_Ptr* lds, char* label, uint16_t address) {
+bool addLabelAddress(V_LabelDescPtr_Ptr* lds, char* label, int16_t address) {
     size_t id = 0;
     while (id < CNT_P(lds) &&
            strcmp(ID_P(lds, id)->labelName, label) != 0)
@@ -25,6 +25,7 @@ bool addLabelAddress(V_LabelDescPtr_Ptr* lds, char* label, uint16_t address) {
     if (id >= CNT_P(lds)) {
         LabelDescPtr descPtr = malloc(sizeof(struct LabelDesc));
         CHECK(descPtr != NULL, "malloc fail", fault)
+        ID_P(lds, id)->labelName = label;
 
         PUSH_BACK_P(lds, descPtr, freeDesc)
 
@@ -35,7 +36,7 @@ bool addLabelAddress(V_LabelDescPtr_Ptr* lds, char* label, uint16_t address) {
         goto fault;
     }
 
-    ID_P(lds, id)->labelName = label;
+    ID_P(lds, id)->address = address;
 
     return true;
 
