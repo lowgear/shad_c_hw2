@@ -17,10 +17,10 @@ struct LabelDesc {
 typedef struct LabelDesc *LabelDescPtr;
 DEFINE_VECTOR(LabelDescPtr)
 
-size_t FindLabDesc(const V_LabelDescPtr_Ptr *lds, const char *label) {
+size_t FindLabDesc(V_LabelDescPtr_Ptr lds, const char *label) {
     size_t id = 0;
-    while (id < CNT_P(lds) &&
-           strcmp(ID_P(lds, id)->labelName, label) != 0)
+    while (id < CNT(lds) &&
+           strcmp(ID(lds, id)->labelName, label) != 0)
         ++id;
     return id;
 }
@@ -31,45 +31,26 @@ bool AddLabDesc(V_LabelDescPtr_Ptr *lds, const char *label) {
 
     char *labelCopy = malloc(sizeof(char) * (strlen(label) + 1));
     CHECK(labelCopy != NULL, "malloc fail", freeDesc)
+    strcpy(labelCopy, label);
 
-    descPtr->labelName = label;
+    descPtr->labelName = labelCopy;
 
     PUSH_BACK_P(lds, descPtr, freeLabelCopy)
 
     INIT_VEC(descPtr->instructionIds, 1, freeLabelCopy)
 
-    freeLabelCopy:
-    freeDesc:
-    free(descPtr);
-    goto fault;
-
-    fault:
-    return false;
-}
-
-bool AddLabelAddress(V_LabelDescPtr_Ptr *lds, const char *label, int16_t address) {
-    size_t id = FindLabDesc(lds, label);
-
-    if (id == CNT_P(lds)) {
-        LabelDescPtr descPtr = malloc(sizeof(struct LabelDesc));
-        CHECK(descPtr != NULL, "malloc fail", fault)
-        ID_P(lds, id)->labelName = label;
-
-        PUSH_BACK_P(lds, descPtr, freeDesc)
-
-        INIT_VEC(descPtr->instructionIds, 1, freeDesc)
-
-        freeDesc:
-        free(descPtr);
-        goto fault;
-    }
-
-    ID_P(lds, id)->address = address;
-
     return true;
 
+    freeLabelCopy:
+    free(labelCopy);
+
+    freeDesc:
+    free(descPtr);
+
     fault:
     return false;
 }
 
-bool AddLabelRef()
+bool AddLabelRef() {
+
+}

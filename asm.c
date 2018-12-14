@@ -54,27 +54,18 @@ int main(int argc, char *argv[]) {
         strToUpper(cmd);
 
         if (IS_LABEL(cmd)) {
-            const size_t cmdLen = strlen(cmd);
-            char *savedLabel = malloc(sizeof(char) * cmdLen + 1);
-            CHECK(savedLabel != NULL, "malloc fail", cleanup)
-            strcpy(savedLabel, cmd);
-            savedLabel[cmdLen] = '\0';
+            cmd[strlen(cmd) - 1] = '\0';
 
             CHECK(CNT(instructions) <= MAX_ADDR / 2, "label address out of range", cleanup)
 
-            CHECK(
-                    AddLabelAddress(
-                            &labelAddresses,
-                            savedLabel,
-                            (int16_t) (2 * CNT(instructions))),
-                    "add label fail",
-                    freeLabel
-            );
+            size_t labelId = FindLabDesc(labelAddresses, cmd);
+            if (labelId == labelAddresses->cnt) {
+                CHECK(AddLabDesc(&labelAddresses, cmd), "failed to add new label descriptor", cleanup)
+            }
+
+            ID(labelAddresses, labelId)->address = (int16_t) (2 * CNT(instructions));
 
             continue;
-
-            freeLabel:
-            goto cleanup;
         }
 
         uint16_t instruction;
@@ -210,11 +201,42 @@ instruction = (uint16_t) (((code##u) << 11) \
         } ELIF(NOP) {
             instruction = (uint16_t) (26u << 11);
         } ELIF(JMP) {
+            CHECK(ReadToken(ifp, cmd, CMD_BUF_SIZE), "failed read label for JMP", cleanup)
 
+            size_t labelId = FindLabDesc(labelAddresses, cmd);
+            if (labelId == labelAddresses->cnt) {
+                CHECK(AddLabDesc(&labelAddresses, cmd), "failed to add new label descriptor", cleanup)
+            }
+
+            PUSH_BACK_P(&(ID(labelAddresses, labelId)->instructionIds), instructions->cnt, cleanup)
+
+            instruction = (uint16_t) (27u << 11);
         } ELIF(JE) {
+            CHECK(ReadToken(ifp, cmd, CMD_BUF_SIZE), "failed read label for JE", cleanup)
+            CHECK(ReadToken(ifp, a, ARG_BUF_SIZE), "failed read RX for JE", cleanup)
+            CHECK(IsRx(a), "JE expected RX", cleanup)
 
+            size_t labelId = FindLabDesc(labelAddresses, cmd);
+            if (labelId == labelAddresses->cnt) {
+                CHECK(AddLabDesc(&labelAddresses, cmd), "failed to add new label descriptor", cleanup)
+            }
+
+            PUSH_BACK_P(&(ID(labelAddresses, labelId)->instructionIds), instructions->cnt, cleanup)
+
+            instruction = (uint16_t) ((28u << 11) | (RxToId(a) << 8));
         } ELIF(JNE) {
+            CHECK(ReadToken(ifp, cmd, CMD_BUF_SIZE), "failed read label for JNE", cleanup)
+            CHECK(ReadToken(ifp, a, ARG_BUF_SIZE), "failed read RX for JNE", cleanup)
+            CHECK(IsRx(a), "JNE expected RX", cleanup)
 
+            size_t labelId = FindLabDesc(labelAddresses, cmd);
+            if (labelId == labelAddresses->cnt) {
+                CHECK(AddLabDesc(&labelAddresses, cmd), "failed to add new label descriptor", cleanup)
+            }
+
+            PUSH_BACK_P(&(ID(labelAddresses, labelId)->instructionIds), instructions->cnt, cleanup)
+
+            instruction = (uint16_t) ((29u << 11) | (RxToId(a) << 8));
         } ELIF(IN) {
             CHECK(ReadToken(ifp, a, ARG_BUF_SIZE),
                   "failed read IN arg", cleanup)
