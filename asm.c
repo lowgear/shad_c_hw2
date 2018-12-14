@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
         char cmd[CMD_BUF_SIZE];
         cmd[CMD_BUF_SIZE - 1] = '\0';
         if (fscanf(ifp, "%s", cmd) != 1)
-            goto no_valid_input;
+            goto checkEOF;
 #define fscanf PrOhIbItEd
         CHECK_F(cmd[CMD_BUF_SIZE - 1] == '\0', "read command from", inPath, rv, UNKNOWN_COMMAND, cleanup)
 
@@ -56,14 +56,12 @@ int main(int argc, char *argv[]) {
         if (IS_LABEL(cmd)) {
             cmd[strlen(cmd) - 1] = '\0';
 
-            CHECK(CNT(instructions) <= MAX_ADDR / 2, "label address out of range", cleanup)
-
             size_t labelId = FindLabDesc(labelAddresses, cmd);
             if (labelId == labelAddresses->cnt) {
                 CHECK(AddLabDesc(&labelAddresses, cmd), "failed to add new label descriptor", cleanup)
             }
 
-            ID(labelAddresses, labelId)->address = (int16_t) (2 * CNT(instructions));
+            ID(labelAddresses, labelId)->labelId = CNT(instructions);
 
             continue;
         }
@@ -248,7 +246,8 @@ instruction = (uint16_t) (((code##u) << 11) \
             CHECK(IsRs(a), "OUT expected RS", cleanup)
             instruction = (uint16_t) ((31u << 11) | RsToId(a));
         } else {
-            goto no_valid_input;
+            printf("token not recognized\n");
+            goto cleanup;
         }
 
 #undef IF
@@ -257,8 +256,22 @@ instruction = (uint16_t) (((code##u) << 11) \
         PUSH_BACK_P(&instructions, instruction, cleanup)
         continue;
 
-        no_valid_input:
+        checkEOF:
         CHECK_F(feof(ifp), "read command from", inPath, rv, 2, cleanup)
+    }
+
+    for (size_t i = 0; i < labelAddresses->cnt; ++i) {
+        LabelDescPtr descP = ID(labelAddresses, i);
+        int64_t labelId = descP->labelId;
+
+        V_size_t_Ptr instrIds = descP->instructionIds;
+        for (size_t j = 0; j < instrIds->cnt; ++j) {
+            int64_t instrId = ID(instrIds, j);
+            const int64_t int64__addrDiff = instrId - labelId;
+            CHECK(INT8_MIN <= int64__addrDiff && int64__addrDiff <= INT8_MAX, "relative call address diff out of range\n", cleanup)
+            const int8_t addrDiff = (const int8_t) int64__addrDiff;
+            ID(instructions, instrId) |= addrDiff;
+        }
     }
 
     cleanup:

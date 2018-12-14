@@ -10,7 +10,7 @@
 
 struct LabelDesc {
     const char *labelName;
-    int16_t address;
+    size_t labelId;
     V_size_t_Ptr instructionIds;
 };
 
