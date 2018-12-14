@@ -22,7 +22,7 @@ VERIFY_F(condition, operation, filename, rv, value, (void)0)
 #define VERIFY(condition, message, exit) \
 do { \
     if (!(condition)) { \
-        fprintf(stderr, message); \
+        fprintf(stderr, message "\n"); \
         exit; \
     } \
 } while (0);

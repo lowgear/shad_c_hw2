@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
             CHECK(CNT(instructions) <= MAX_ADDR / 2, "label address out of range", cleanup)
 
             CHECK(
-                    addLabelAddress(
+                    AddLabelAddress(
                             &labelAddresses,
                             savedLabel,
                             (int16_t) (2 * CNT(instructions))),
@@ -91,14 +91,14 @@ int main(int argc, char *argv[]) {
             to[ARG_BUF_SIZE - 1] = from[ARG_BUF_SIZE - 1] = '\0';
 
             CHECK(ReadToken(ifp, to, ARG_BUF_SIZE),
-                  "read first move arg from", cleanup)
+                  "read first MOV arg from", cleanup)
             CHECK(ReadToken(ifp, from, ARG_BUF_SIZE),
-                  "read second move arg from", cleanup)
+                  "read second MOV arg from", cleanup)
 
 #define ISMEMOP(a) (((a)[0] == '(' && (a)[strlen((a)) - 1] == ')') ? 1 : 0)
 
             if (ParseImm8(from, &imm8)) {
-                CHECK(IsRs(to), "mov expected first RS", cleanup)
+                CHECK(IsRs(to), "MOV expected first RS", cleanup)
                 int toId = RsToId(to);
 
                 instruction = (uint16_t) ((3 << 12)
@@ -116,7 +116,7 @@ instruction = (uint16_t) (((code##u) << 12) \
                 short opType = (short) ((ISMEMOP(to) << 1) | ISMEMOP(from));
                 switch (opType) {
                     case 0:
-                        CHECK(IsRx(to) && IsRx(from), "mov expected RX RX", cleanup)
+                        CHECK(IsRx(to) && IsRx(from), "MOV expected RX RX", cleanup)
                         SETINST(0)
                         break;
                     case 1:
@@ -128,22 +128,22 @@ instruction = (uint16_t) (((code##u) << 12) \
                         SETINST(2)
                         break;
                     default:
-                        CHECK(false, "mov (RX) (RX) not supported", cleanup)
+                        CHECK(false, "MOV (RX) (RX) not supported", cleanup)
                 }
             }
 
 #undef SETINST
         } ELIF(PUSH) {
-            CHECK(ReadToken(ifp, arg, ARG_BUF_SIZE), "failed read push arg", cleanup)
-            CHECK(IsRx(arg), "push expected RX", cleanup)
+            CHECK(ReadToken(ifp, arg, ARG_BUF_SIZE), "failed read PUSH arg", cleanup)
+            CHECK(IsRx(arg), "PUSH expected RX", cleanup)
             instruction = (uint16_t) ((4u << 12) | RxToId(arg));
         } ELIF(POP) {
-            CHECK(ReadToken(ifp, arg, ARG_BUF_SIZE), "failed read pop arg", cleanup)
-            CHECK(IsRx(arg), "pop expected RX", cleanup)
+            CHECK(ReadToken(ifp, arg, ARG_BUF_SIZE), "failed read POP arg", cleanup)
+            CHECK(IsRx(arg), "POP expected RX", cleanup)
             instruction = (uint16_t) ((5u << 12) | RxToId(arg));
         } ELIF(CALL) {
-            CHECK(ReadToken(ifp, arg, ARG_BUF_SIZE), "failed read call arg", cleanup)
-            CHECK(ParseImm8(arg, &imm8), "call expected #imm8", cleanup)
+            CHECK(ReadToken(ifp, arg, ARG_BUF_SIZE), "failed read CALL arg", cleanup)
+            CHECK(ParseImm8(arg, &imm8), "CALL expected #imm8", cleanup)
             instruction = (uint16_t) ((6u << 12) | imm8);
         } ELIF(RET) {
             instruction = 14u << 11;
@@ -155,10 +155,10 @@ instruction = (uint16_t) (((code##u) << 11) \
 
 #define BIN_OP(code, name) \
             CHECK(ReadToken(ifp, a, ARG_BUF_SIZE), \
-                  "read first " #name " arg from", cleanup) \
+                  "failed read first " #name " arg", cleanup) \
             CHECK(IsRx(a),  #name " expected RX RX", cleanup) \
             CHECK(ReadToken(ifp, b, ARG_BUF_SIZE), \
-                  "read second " #name " arg from", cleanup) \
+                  "failed read second " #name " arg", cleanup) \
             CHECK(IsRx(b), #name " expected RX RX", cleanup) \
             SETINST(code)
 
@@ -175,22 +175,56 @@ instruction = (uint16_t) (((code##u) << 11) \
             BIN_OP(20, OR)
         } ELIF(XOR) {
             BIN_OP(21, XOR)
+
+#undef BIN_OP
+#undef SETINST
         } ELIF(NOT) {
-
+            CHECK(ReadToken(ifp, a, ARG_BUF_SIZE),
+                  "failed read first NOT arg", cleanup)
+            CHECK(IsRx(a), "NOT expected RX", cleanup)
+            instruction = (uint16_t) ((22u << 11) | RxToId(a));
         } ELIF(SHL) {
-
+            CHECK(ReadToken(ifp, a, ARG_BUF_SIZE),
+                  "failed read first SHL arg", cleanup)
+            CHECK(IsRx(a), "SHL expected RX", cleanup)
+            CHECK(ReadToken(ifp, b, ARG_BUF_SIZE),
+                  "failed read second SHL arg", cleanup)
+            uint8_t imm4;
+            CHECK(ParseImm4(b, &imm4), "failed parse #imm4", cleanup)
+            instruction = (uint16_t) ((23u << 11)
+                                      | (RxToId(a) << 4)
+                                      | imm4);
         } ELIF(SHR) {
-
-        } ELIF(RESER) {
-
+            CHECK(ReadToken(ifp, a, ARG_BUF_SIZE),
+                  "failed read first SHR arg", cleanup)
+            CHECK(IsRx(a), "SHL expected RX", cleanup)
+            CHECK(ReadToken(ifp, b, ARG_BUF_SIZE),
+                  "failed read second SHR arg", cleanup)
+            uint8_t imm4;
+            CHECK(ParseImm4(b, &imm4), "failed parse #imm4", cleanup)
+            instruction = (uint16_t) ((24u << 11)
+                                      | (RxToId(a) << 4)
+                                      | imm4);
+        } ELIF(RESET) {
+            instruction = (uint16_t) (25u << 11);
         } ELIF(NOP) {
-
+            instruction = (uint16_t) (26u << 11);
         } ELIF(JMP) {
 
         } ELIF(JE) {
 
         } ELIF(JNE) {
 
+        } ELIF(IN) {
+            CHECK(ReadToken(ifp, a, ARG_BUF_SIZE),
+                  "failed read IN arg", cleanup)
+            CHECK(IsRs(a), "IN expected RS", cleanup)
+            instruction = (uint16_t) ((30u << 11) | RsToId(a));
+        } ELIF(OUT) {
+            CHECK(ReadToken(ifp, a, ARG_BUF_SIZE),
+                  "failed read OUT arg", cleanup)
+            CHECK(IsRs(a), "OUT expected RS", cleanup)
+            instruction = (uint16_t) ((31u << 11) | RsToId(a));
         } else {
             goto no_valid_input;
         }
@@ -199,8 +233,8 @@ instruction = (uint16_t) (((code##u) << 11) \
 #undef ELIF
 
         PUSH_BACK_P(&instructions, instruction, cleanup)
-
         continue;
+
         no_valid_input:
         CHECK_F(feof(ifp), "read command from", inPath, rv, 2, cleanup)
     }

@@ -35,12 +35,18 @@ int RsToId(const char *rx) {
 #define IS_LABEL(str) ((str)[strlen(str) - 1] == ':')
 
 bool ParseImm8(const char* str, uint8_t* imm8) {
-    if (strlen(str) > 3)
-        return false;
     unsigned long res = strtoul(str, NULL, 0);
-    if (res > 255)
+    if (errno == ERANGE || res > 255)
         return false;
     *imm8 = (uint8_t) res;
+    return true;
+}
+
+bool ParseImm4(const char* str, uint8_t* imm4) {
+    unsigned long res = strtoul(str, NULL, 0);
+    if (errno == ERANGE || res > 15)
+        return false;
+    *imm4 = (uint8_t) res;
     return true;
 }
 
