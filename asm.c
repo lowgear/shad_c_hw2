@@ -267,7 +267,7 @@ instruction = (uint16_t) (((code##u) << 11) \
         V_size_t_Ptr instrIds = descP->instructionIds;
         for (size_t j = 0; j < instrIds->cnt; ++j) {
             int64_t instrId = ID(instrIds, j);
-            const int64_t int64__addrDiff = instrId - labelId;
+            const int64_t int64__addrDiff = (instrId - labelId) * 2;
             CHECK(INT8_MIN <= int64__addrDiff && int64__addrDiff <= INT8_MAX, "relative call address diff out of range\n", cleanup)
             const int8_t addrDiff = (const int8_t) int64__addrDiff;
             ID(instructions, instrId) |= addrDiff;
