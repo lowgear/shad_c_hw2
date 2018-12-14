@@ -4,7 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 
-bool IsRx(char *rx) {
+bool IsRx(const char *rx) {
     return (strlen(rx) == 3
             && rx[0] == 'R'
             && isdigit(rx[1])
@@ -13,13 +13,13 @@ bool IsRx(char *rx) {
            || strcmp(rx, "SP") == 0;
 }
 
-int RxToId(char *rx) {
+int RxToId(const char *rx) {
     if (strcmp(rx, "SP") == 0)
         return 7;
     return rx[1] - '0';
 }
 
-bool IsRs(char *rx) {
+bool IsRs(const char *rx) {
     return strlen(rx) == 3
            && rx[0] == 'R'
            && isdigit(rx[1])
@@ -27,7 +27,24 @@ bool IsRs(char *rx) {
            && (rx[2] == 'L' || rx[2] == 'H');
 }
 
-int RsToId(char *rx) {
+int RsToId(const char *rx) {
     return ((rx[1] - '0') << 1)
            + (rx[2] == 'H' ? 1 : 0);
+}
+
+#define IS_LABEL(str) ((str)[strlen(str) - 1] == ':')
+
+bool ParseImm8(const char* str, uint8_t* imm8) {
+    if (strlen(str) > 3)
+        return false;
+    unsigned long res = strtoul(str, NULL, 0);
+    if (res > 255)
+        return false;
+    *imm8 = (uint8_t) res;
+    return true;
+}
+
+void TrimBrackets(char* str) {
+    str[strlen(str) - 1] = '\0';
+    for (; str[0] = str[1]; ++str);
 }
