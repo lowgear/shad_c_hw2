@@ -11,8 +11,8 @@
     \
     typedef struct V_##T* V_##T##_Ptr;
 
-
-#define ID(vec, id) ((vec)->array[(id)])
+#define ARR(vec) ((vec)->array)
+#define ID(vec, id) (ARR(vec)[(id)])
 #define CNT(vec) ((vec)->cnt)
 #define SIZE(vec) ((vec)->size)
 
@@ -41,3 +41,5 @@
         ID_P(vecP, CNT_P(vecP)) = (val); \
         ++CNT_P(vecP); \
     } while (0);
+
+#define FREE_V(vec) free((vec))

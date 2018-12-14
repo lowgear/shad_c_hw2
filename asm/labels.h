@@ -9,7 +9,7 @@
 #include "asm/error_check_tools.h"
 
 struct LabelDesc {
-    const char *labelName;
+    char *labelName;
     size_t labelId;
     V_size_t_Ptr instructionIds;
 };
@@ -51,6 +51,8 @@ bool AddLabDesc(V_LabelDescPtr_Ptr *lds, const char *label) {
     return false;
 }
 
-bool AddLabelRef() {
-
+void FreeDesc(LabelDescPtr descP) {
+    free(descP->instructionIds);
+    free(descP->labelName);
+    free(descP);
 }

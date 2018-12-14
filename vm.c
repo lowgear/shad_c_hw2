@@ -9,11 +9,11 @@
 #include "argtools.h"
 
 
-const int ARGNUM = 3;
+const int ARG_NUM = 3;
 
 
 int main(int argc, char* argv[]) {
-    CHECK_FALL(argc == ARGNUM + 1, "Number of arguments should be 3, but got %d", argc - 1)
+    CHECK_FALL(argc == ARG_NUM + 1, "Number of arguments should be 3, but got %d", argc - 1)
 
     char* endOfNumber;
     unsigned long long maxInstructions = strtoull(argv[1], &endOfNumber, 0);
