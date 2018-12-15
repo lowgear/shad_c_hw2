@@ -6,7 +6,7 @@
 
 #include "mingw_stdio_fix.h"
 #include "argtools.h"
-#include "asm/error_check_tools.h"
+#include "utils/error_check_tools.h"
 #include "asm/exit_codes.h"
 #include "utils/vector.h"
 #include "asm/labels.h"
@@ -14,24 +14,24 @@
 #include "asm/token_tools.h"
 #include "asm/readtoken.h"
 
-typedef const size_t CS;
-CS ARG_NUM = 2;
+#define ARG_NUM 2
 
-CS LABEL_MAX_LEN = 20;
+#define LABEL_MAX_LEN 20
 
-CS ARG_BUF_SIZE = 7;
+#define ARG_BUF_SIZE 7
 
-CS CMD_BUF_SIZE = LABEL_MAX_LEN + 3;
+#define CMD_BUF_SIZE (LABEL_MAX_LEN + 3)
 
 typedef uint16_t instr;
 DEFINE_VECTOR(instr)
 
 
 int main(int argc, char *argv[]) {
-    CHECK_FALL(argc == ARG_NUM + 1, "Number of arguments should be 3, but got %d", argc - 1)
-
     int rv = 0;
     int fileType;
+
+    CHECK(argc == ARG_NUM + 1, "Number of arguments should be 3", rv = INVALID_ARGS_NUM, exit)
+
     const char *const inPath = argv[1];
     const char *const outPath = argv[2];
 
@@ -45,15 +45,16 @@ int main(int argc, char *argv[]) {
     CHECK_F(fp = fopen(inPath, "r"), "open", inPath, rv, CANT_OPEN_FILE | fileType, freeInstrs)
 
 #define CHECK_READ(condition, message) CHECK_F((condition), message, inPath, rv, READ_FAIL, closeFile)
-#define CHECK_ARG(condition, message) CHECK((condition), message, rv, BAD_ARG, closeFile)
+#define CHECK_ARG(condition, message) CHECK((condition), message, rv = BAD_ARG, closeFile)
 
     while (!feof(fp)) {
         char cmd[CMD_BUF_SIZE];
         cmd[CMD_BUF_SIZE - 1] = '\0';
-        if (fscanf(fp, "%s", cmd) != 1)
+        if (fscanf(fp, "%s", cmd) != 1) {
             goto checkEOF;
+        }
 
-        CHECK(cmd[CMD_BUF_SIZE - 1] == '\0', "unknown command", rv, UNKNOWN_COMMAND, closeFile)
+        CHECK(cmd[CMD_BUF_SIZE - 1] == '\0', "unknown command", rv = UNKNOWN_COMMAND, closeFile)
 
         strToUpper(cmd);
 
@@ -62,7 +63,7 @@ int main(int argc, char *argv[]) {
 
             size_t labelId = FindLabDesc(labels, cmd);
             if (labelId == labels->cnt) {
-                CHECK(AddLabDesc(&labels, cmd), "failed to add new label descriptor", rv, ALLOC_FAIL, closeFile)
+                CHECK(AddLabDesc(&labels, cmd), "failed to add new label descriptor", rv = ALLOC_FAIL, closeFile)
             }
 
             ID(labels, labelId)->labelId = CNT(instructs);
@@ -90,10 +91,9 @@ int main(int argc, char *argv[]) {
 
             if (ParseImm8(from, &imm8)) {
                 CHECK_ARG(IsRs(to), "MOV expected first RS")
-                int toId = RsToId(to);
 
                 instruction = (uint16_t) ((3 << 12)
-                                          | (toId << 8)
+                                          | (RsToId(to) << 8)
                                           | imm8);
             } else {
 
@@ -119,9 +119,9 @@ instruction = (uint16_t) (((code##u) << 12) \
                         SETINST(2)
                         break;
                     case 3:
-                        CHECK(false, "MOV (RX) (RX) not supported", rv, UNKNOWN_COMMAND, closeFile)
+                        CHECK(false, "MOV (RX) (RX) not supported", rv = UNKNOWN_COMMAND, closeFile)
                     default:
-                        CHECK(false, "unexpected workflow", rv, UNWNOWN_ERROR, closeFile)
+                        CHECK(false, "unexpected workflow", rv = UNWNOWN_ERROR, closeFile)
                 }
             }
 
@@ -136,7 +136,7 @@ instruction = (uint16_t) (((code##u) << 12) \
             instruction = (uint16_t) ((5u << 12) | RxToId(arg));
         } ELIF(CALL) {
             CHECK_READ(ReadToken(fp, arg, ARG_BUF_SIZE), "failed read CALL arg")
-            CHECK_ARG(ParseImm8(arg, &imm8), "CALL expected #imm8")
+            CHECK_ARG(ParseSignedImm8(arg, &imm8), "CALL expected #imm8")
             instruction = (uint16_t) ((6u << 12) | imm8);
         } ELIF(RET) {
             instruction = 14u << 11;
@@ -207,7 +207,7 @@ instruction = (uint16_t) (((code##u) << 11) \
 
             size_t labelId = FindLabDesc(labels, cmd);
             if (labelId == labels->cnt) {
-                CHECK(AddLabDesc(&labels, cmd), "failed to add new label descriptor", rv, ALLOC_FAIL, closeFile)
+                CHECK(AddLabDesc(&labels, cmd), "failed to add new label descriptor", rv = ALLOC_FAIL, closeFile)
             }
 
             PUSH_BACK_P(&(ID(labels, labelId)->instructionIds), instructs->cnt, closeFile)
@@ -220,7 +220,7 @@ instruction = (uint16_t) (((code##u) << 11) \
 
             size_t labelId = FindLabDesc(labels, cmd);
             if (labelId == labels->cnt) {
-                CHECK(AddLabDesc(&labels, cmd), "failed to add new label descriptor", rv, ALLOC_FAIL, closeFile)
+                CHECK(AddLabDesc(&labels, cmd), "failed to add new label descriptor", rv = ALLOC_FAIL, closeFile)
             }
 
             PUSH_BACK_P(&(ID(labels, labelId)->instructionIds), instructs->cnt, closeFile)
@@ -233,7 +233,7 @@ instruction = (uint16_t) (((code##u) << 11) \
 
             size_t labelId = FindLabDesc(labels, cmd);
             if (labelId == labels->cnt) {
-                CHECK(AddLabDesc(&labels, cmd), "failed to add new label descriptor", rv, ALLOC_FAIL, closeFile)
+                CHECK(AddLabDesc(&labels, cmd), "failed to add new label descriptor", rv = ALLOC_FAIL, closeFile)
             }
 
             PUSH_BACK_P(&(ID(labels, labelId)->instructionIds), instructs->cnt, closeFile)
@@ -272,7 +272,7 @@ instruction = (uint16_t) (((code##u) << 11) \
         for (size_t j = 0; j < CNT(instrIds); ++j) {
             int64_t instrId = ID(instrIds, j);
             const int64_t int64__addrDiff = (instrId - labelId) * 2;
-            CHECK(INT8_MIN <= int64__addrDiff && int64__addrDiff <= INT8_MAX, "relative call address diff out of range", rv, RELATIVE_CALL_OUT_OF_RANGE, closeFile)
+            CHECK(INT8_MIN <= int64__addrDiff && int64__addrDiff <= INT8_MAX, "relative call address diff out of range", rv = RELATIVE_CALL_OUT_OF_RANGE, closeFile)
             const int8_t addrDiff = (const int8_t) int64__addrDiff;
             ID(instructs, instrId) |= addrDiff;
         }

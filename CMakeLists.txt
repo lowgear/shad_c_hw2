@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_executable(fake_vm vm.c)
 
-add_executable(fake_asm asm.c)
+add_executable(fake_asm asm.c utils/strtools.c asm/labels.c asm/readtoken.c asm/token_tools.c)
 
 add_executable(fake_tests check.cpp ${GTEST}/src/gtest_main.cc ${GTEST}/src/gtest-all.cc)
 

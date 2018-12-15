@@ -21,8 +21,17 @@ COMPILE_C_SRC=$(CC) $(CFLAGS) -c -o $@ $^
 
 all: asm vm check;
 
-asm: asm.o strtools.o
+asm: asm.o strtools.o labels.o readtoken.o token_tools.o
 	$(LINK_EXECUTABLE)
+
+token_tools.o: $(SRCD)/asm/token_tools.c
+	$(COMPILE_C_SRC)
+
+readtoken.o: $(SRCD)/asm/readtoken.c
+	$(COMPILE_C_SRC)
+
+labels.o: $(SRCD)/asm/labels.c
+	$(COMPILE_C_SRC)
 
 asm.o: $(SRCD)/asm.c
 	$(COMPILE_C_SRC)
@@ -45,7 +54,7 @@ gtest-all.o: $(GTEST)/src/gtest-all.cc
 gtest_main.o: $(GTEST)/src/gtest_main.cc
 	$(COMPILE_CXX_SRC)
 
-strtools.o: $(SRCD)/strtools.c
+strtools.o: $(SRCD)/utils/strtools.c
 	$(COMPILE_C_SRC)
 
 TO_DELETE=asm vm check
