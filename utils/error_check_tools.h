@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 
 #define VERIFY_F(condition, operation, filename, rv, value, exit) \

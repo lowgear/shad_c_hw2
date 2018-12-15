@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     int rv = 0;
     int fileType;
 
-    CHECK(argc == ARG_NUM + 1, "Number of arguments should be 3", rv = INVALID_ARGS_NUM, exit)
+    CHECK(argc == ARG_NUM + 1, "Number of arguments should be 2", rv = INVALID_ARGS_NUM, exit)
 
     const char *const inPath = argv[1];
     const char *const outPath = argv[2];
@@ -283,7 +283,12 @@ instruction = (uint16_t) (((code##u) << 11) \
     fileType = OUT_FILE_TYPE;
     
     CHECK_F(fp = fopen(inPath, "w"), "open write", outPath, rv, CANT_OPEN_FILE | fileType, freeInstrs)
-    CHECK_F(fwrite(ARR(instructs), sizeof(uint16_t), CNT(instructs), fp) == CNT(instructs), "write instructions to", outPath, rv, CANT_WRITE_TO_FILE | fileType, closeFile)
+    for (size_t i = 0; i < CNT(instructs); ++i) {
+        int lower = ID(instructs, i) & UINT8_MAX;
+        int upper = (ID(instructs, i) >> 8) & UINT8_MAX;
+        CHECK_F(fputc(lower, fp) != EOF, "write instruction to", outPath, rv, CANT_WRITE_TO_FILE | fileType, closeFile)
+        CHECK_F(fputc(upper, fp) != EOF, "write instruction to", outPath, rv, CANT_WRITE_TO_FILE | fileType, closeFile)
+    }
 
     closeFile:
     ROLLBACK_F(fclose(fp) == 0, "close", inPath, rv, CANT_CLOSE_FILE | fileType)
