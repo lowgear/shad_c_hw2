@@ -59,7 +59,7 @@ TEST(Vector, Sanity) {
     }
 
     for (size_t i = 0; i < CNT(vec); ++i) {
-        EXPECT_EQ((int)i, ID(vec, i));
+        EXPECT_EQ((int) i, ID(vec, i));
     }
 
     EXPECT_LE(CNT(vec), SIZE(vec));
@@ -370,4 +370,343 @@ TEST(movRsI, Sanity) {
     EXPECT_EQ(vm::movRsI(&_vm, 0b0000'1011'00000000 | 0xCD), vm::CONTINUE);
 
     EXPECT_EQ(_vm.R[5], 0xCDAB);
+}
+
+TEST(push, Sanity) {
+    uint16_t stackOrig = 12;
+    for (size_t i = 0; i < 12; ++i) {
+        _vm.mem[i] = 0;
+    }
+
+    _vm.R[1] = 123;
+    _vm.R[vm::SP_ID] = stackOrig;
+
+    EXPECT_EQ(vm::push(&_vm, 0b00001'00000000'001), vm::CONTINUE);
+
+    EXPECT_EQ(_vm.R[vm::SP_ID], stackOrig - 2);
+    EXPECT_EQ(GET(&_vm, stackOrig - 2), 123);
+}
+
+TEST(push, SPtoStack) {
+    uint16_t stackOrig = 12;
+    for (size_t i = 0; i < 12; ++i) {
+        _vm.mem[i] = 0;
+    }
+
+    _vm.R[1] = 123;
+    _vm.R[vm::SP_ID] = stackOrig;
+
+    EXPECT_EQ(vm::push(&_vm, 0b00001'00000000'111), vm::CONTINUE);
+
+    EXPECT_EQ(_vm.R[vm::SP_ID], stackOrig - 2);
+    EXPECT_EQ(GET(&_vm, stackOrig - 2), stackOrig - 2);
+}
+
+TEST(push, UnalignedStackAccess) {
+    _vm.R[vm::SP_ID] = 5;
+
+    EXPECT_EQ(vm::push(&_vm, 0b00001'00000000'111), vm::UNALIGNED_STACK_ACCESS);
+}
+
+TEST(push, SP_Overflow) {
+    _vm.R[vm::SP_ID] = 0;
+
+    EXPECT_EQ(vm::push(&_vm, 0b00001'00000000'111), vm::OVERFLOW);
+}
+
+TEST(pop, Sanity) {
+    _vm.R[vm::SP_ID] = 2;
+    _vm.R[0] = 0;
+    vm::set16AtAddr(&_vm, 2, 0xABCD);
+
+    EXPECT_EQ(vm::pop(&_vm, 0b00001'00000000'000), vm::CONTINUE);
+
+    EXPECT_EQ(_vm.R[0], 0xABCD);
+}
+
+TEST(pop, UnalignedStackAccess) {
+    _vm.R[vm::SP_ID] = 5;
+
+    EXPECT_EQ(vm::pop(&_vm, 0b00001'00000000'111), vm::UNALIGNED_STACK_ACCESS);
+}
+
+TEST(pop, SP_Overflow) {
+    _vm.R[vm::SP_ID] = UINT16_MAX - 1;
+
+    EXPECT_EQ(vm::pop(&_vm, 0b00001'00000000'000), vm::OVERFLOW);
+}
+
+TEST(call, Sanity) {
+    const uint16_t stackOrig = 12;
+    const uint16_t IPOrig = 20;
+    for (size_t i = 0; i < 12; ++i) {
+        _vm.mem[i] = 0;
+    }
+
+    _vm.R[vm::SP_ID] = stackOrig;
+    _vm.IP = IPOrig;
+
+    _vm.IP += 2;
+    EXPECT_EQ(vm::call(&_vm, 0b00001'000'00000110), vm::CONTINUE);
+
+    EXPECT_EQ(_vm.R[vm::SP_ID], stackOrig - 2);
+    EXPECT_EQ(GET(&_vm, stackOrig), IPOrig + 2);
+    EXPECT_EQ(_vm.IP, IPOrig + 0b110);
+}
+
+TEST(call, UnalignedStackAccess) {
+    const uint16_t stackOrig = 13;
+    const uint16_t IPOrig = 20;
+    for (size_t i = 0; i < 12; ++i) {
+        _vm.mem[i] = 0;
+    }
+
+    _vm.R[vm::SP_ID] = stackOrig;
+    _vm.IP = IPOrig;
+
+    _vm.IP += 2;
+    EXPECT_EQ(vm::call(&_vm, 0b00001'000'00000110), vm::UNALIGNED_STACK_ACCESS);
+}
+
+TEST(call, UnalignedMemAccess) {
+    const uint16_t stackOrig = 12;
+    const uint16_t IPOrig = 20;
+    for (size_t i = 0; i < 12; ++i) {
+        _vm.mem[i] = 0;
+    }
+
+    _vm.R[vm::SP_ID] = stackOrig;
+    _vm.IP = IPOrig;
+
+    _vm.IP += 2;
+    EXPECT_EQ(vm::call(&_vm, 0b00001'000'00000111), vm::UNALIGNED_MEM_ACCESS);
+}
+
+TEST(call, SP_Overflow) {
+    const uint16_t stackOrig = 0;
+    const uint16_t IPOrig = 20;
+    for (size_t i = 0; i < 12; ++i) {
+        _vm.mem[i] = 0;
+    }
+
+    _vm.R[vm::SP_ID] = stackOrig;
+    _vm.IP = IPOrig;
+
+    _vm.IP += 2;
+    EXPECT_EQ(vm::call(&_vm, 0b00001'000'00000110), vm::OVERFLOW);
+}
+
+TEST(ret, Sanity) {
+    vm::set16AtAddr(&_vm, 0, 14);
+    _vm.R[vm::SP_ID] = 0;
+    _vm.IP = 0;
+
+    EXPECT_EQ(vm::ret(&_vm, 0), vm::CONTINUE);
+    EXPECT_EQ(_vm.IP, 14);
+    EXPECT_EQ(_vm.R[vm::SP_ID], 2);
+}
+
+TEST(ret, UnalignedStackAccess) {
+    vm::set16AtAddr(&_vm, 0, 14);
+    _vm.R[vm::SP_ID] = 1;
+    _vm.IP = 0;
+
+    EXPECT_EQ(vm::ret(&_vm, 0), vm::UNALIGNED_STACK_ACCESS);
+}
+
+TEST(ret, UnalignedMemAccess) {
+    vm::set16AtAddr(&_vm, 0, 13);
+    _vm.R[vm::SP_ID] = 0;
+    _vm.IP = 0;
+
+    EXPECT_EQ(vm::ret(&_vm, 0), vm::UNALIGNED_MEM_ACCESS);
+}
+
+TEST(ret, Overflow) {
+    vm::set16AtAddr(&_vm, 0, 14);
+    _vm.R[vm::SP_ID] = UINT16_MAX - 1;
+    _vm.IP = 0;
+
+    EXPECT_EQ(vm::ret(&_vm, 0), vm::OVERFLOW);
+}
+
+#define TEST_OP(handle, op, a, b, expectedCode) do { \
+    _vm.R[0] = a; \
+    _vm.R[1] = b; \
+    int code = vm::handle(&_vm, 0b000'001); \
+    ASSERT_EQ(code, vm::expectedCode); \
+    if (code == vm::CONTINUE) { \
+        EXPECT_EQ(_vm.R[0], (a) op (b)); \
+    } \
+} while (0);
+
+TEST(add, Sanity) {
+    TEST_OP(add, +, 4, 5, CONTINUE)
+}
+
+TEST(add, Overflow) {
+    TEST_OP(add, +, UINT16_MAX, UINT16_MAX, OVERFLOW)
+}
+
+TEST(sub, Sanity) {
+    TEST_OP(sub, -, 5, 4, CONTINUE)
+}
+
+TEST(sub, Overflow) {
+    TEST_OP(sub, -, 4, 5, OVERFLOW)
+}
+
+TEST(mul, Sanity) {
+    TEST_OP(mul, *, 5, 4, CONTINUE)
+}
+
+TEST(mul, Overflow) {
+    TEST_OP(mul, *, UINT16_MAX, 2, OVERFLOW)
+}
+
+TEST(div, Sanity) {
+    TEST_OP(_div, /, 9, 2, CONTINUE)
+}
+
+TEST(div, DBZ) {
+    TEST_OP(_div, /, 123, 0, DBZ)
+}
+
+TEST(_and, Sanity) {
+    TEST_OP(_and, &, 5, 4, CONTINUE)
+    TEST_OP(_and, &, 3, 7, CONTINUE)
+}
+
+TEST(_or, Sanity) {
+    TEST_OP(_or, |, 5, 4, CONTINUE)
+    TEST_OP(_or, |, 3, 7, CONTINUE)
+}
+
+TEST(_xor, Sanity) {
+    TEST_OP(_xor, ^, 5, 4, CONTINUE)
+    TEST_OP(_xor, ^, 3, 7, CONTINUE)
+}
+
+TEST(_not, Sanity) {
+    const uint16_t orig = 13;
+    _vm.R[0] = orig;
+
+    EXPECT_EQ(vm::_not(&_vm, 0b000), vm::CONTINUE);
+    EXPECT_EQ(_vm.R[0], (uint16_t) ~orig);
+}
+
+TEST(shl, Sanity) {
+    const uint16_t orig = 13;
+    _vm.R[0] = orig;
+
+    EXPECT_EQ(vm::shl(&_vm, 0b000'0011), vm::CONTINUE);
+    EXPECT_EQ(_vm.R[0], orig << 3);
+}
+
+TEST(shr, Sanity) {
+    const uint16_t orig = 13;
+    _vm.R[0] = orig;
+
+    EXPECT_EQ(vm::shr(&_vm, 0b000'0010), vm::CONTINUE);
+    EXPECT_EQ(_vm.R[0], orig >> 2);
+}
+
+TEST(reset, Sanity) {
+    EXPECT_EQ(vm::reset(&_vm, 0), vm::RETURN);
+}
+
+TEST(nop, Sanity) {
+    EXPECT_EQ(vm::nop(&_vm, 0), vm::CONTINUE);
+}
+
+TEST(jmp, Sanity) {
+    _vm.IP = 4;
+
+    _vm.IP += 2;
+    EXPECT_EQ(vm::jmp(&_vm, 0b00000110), vm::CONTINUE);
+    EXPECT_EQ(_vm.IP, 4 + 6);
+}
+
+TEST(jmp, UnalignedMemAccess) {
+    _vm.IP = 4;
+
+    _vm.IP += 2;
+    EXPECT_EQ(vm::jmp(&_vm, 0b00000111), vm::UNALIGNED_MEM_ACCESS);
+}
+
+TEST(je, Sanity) {
+    _vm.IP = 4;
+    _vm.R[0] = 0;
+
+    _vm.IP += 2;
+    EXPECT_EQ(vm::je(&_vm, 0b000'00000110), vm::CONTINUE);
+    EXPECT_EQ(_vm.IP, 4 + 6);
+
+    _vm.R[0] = 1;
+
+    _vm.IP += 2;
+    EXPECT_EQ(vm::je(&_vm, 0b000'00000110), vm::CONTINUE);
+    EXPECT_EQ(_vm.IP, 4 + 6 + 2);
+}
+
+TEST(je, UnalignedMemAccess) {
+    _vm.IP = 4;
+
+    _vm.IP += 2;
+    EXPECT_EQ(vm::je(&_vm, 0b00000111), vm::UNALIGNED_MEM_ACCESS);
+}
+
+TEST(jne, Sanity) {
+    _vm.IP = 4;
+    _vm.R[0] = 1;
+
+    _vm.IP += 2;
+    EXPECT_EQ(vm::jne(&_vm, 0b000'00000110), vm::CONTINUE);
+    EXPECT_EQ(_vm.IP, 4 + 6);
+
+    _vm.R[0] = 0;
+
+    _vm.IP += 2;
+    EXPECT_EQ(vm::jne(&_vm, 0b000'00000110), vm::CONTINUE);
+    EXPECT_EQ(_vm.IP, 4 + 6 + 2);
+}
+
+TEST(jne, UnalignedMemAccess) {
+    _vm.IP = 4;
+
+    _vm.IP += 2;
+    EXPECT_EQ(vm::jne(&_vm, 0b00000111), vm::UNALIGNED_MEM_ACCESS);
+}
+
+TEST(inOut, Sanity) {
+    const char fileNameIn[] = "testfileIn";
+    FILE *fp = fopen(fileNameIn, "w");
+    fputc(0xAB, fp);
+    fputc(0xCD, fp);
+    fclose(fp);
+
+    freopen(fileNameIn, "r", stdin);
+
+    EXPECT_EQ(vm::in(&_vm, 0b0000), vm::CONTINUE);
+    EXPECT_EQ(vm::in(&_vm, 0b0001), vm::CONTINUE);
+    EXPECT_EQ(_vm.R[0], 0xCDAB);
+
+    fclose(stdin);
+
+    const char fileNameOut[] = "testfileOut";
+
+    freopen(fileNameOut, "w", stdout);
+    EXPECT_EQ(vm::out(&_vm, 0b0000), vm::CONTINUE);
+    EXPECT_EQ(vm::out(&_vm, 0b0001), vm::CONTINUE);
+
+    fclose(stdout);
+
+    fp = fopen(fileNameOut, "r");
+    EXPECT_EQ(fgetc(fp), 0xAB);
+    EXPECT_EQ(fgetc(fp), 0xCD);
+    EXPECT_EQ(fgetc(fp), EOF);
+    fclose(fp);
+
+    remove(fileNameIn);
+    remove(fileNameOut);
 }

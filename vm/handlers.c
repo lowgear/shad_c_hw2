@@ -96,37 +96,43 @@ int pop(struct VM *vm, uint16_t instr) {
 }
 
 int call(struct VM *vm, uint16_t instr) {
-    set16AtAddr(vm, vm->R[SP_ID], vm->IP);
-
-    int32_t newIP = vm->IP - 1 + (int8_t)GET_ARG(instr, 8, 0);
+    if (vm->R[SP_ID] < 2)
+        return OVERFLOW;
+    if (vm->R[SP_ID] & 1)
+        return UNALIGNED_STACK_ACCESS;
+    int32_t newIP = vm->IP - 2 + (int8_t)GET_ARG(instr, 8, 0);
     if (newIP < 0 || newIP > ADDR_NUM)
         return OVERFLOW;
     if (newIP & 1)
-        return UNALIGNED_STACK_ACCESS;
+        return UNALIGNED_MEM_ACCESS;
 
+    set16AtAddr(vm, vm->R[SP_ID], vm->IP);
+    vm->R[SP_ID] -= 2;
     vm->IP = (uint16_t) newIP;
 
     return CONTINUE;
 }
 
 int ret(struct VM *vm, uint16_t instr) {
-    uint16_t newIP = vm->R[SP_ID];
-
-    if (newIP & 1)
+    if (vm->R[SP_ID] & 1)
         return UNALIGNED_STACK_ACCESS;
+    if (vm->R[SP_ID] == UINT16_MAX - 1)
+        return OVERFLOW;
+    uint16_t newIP = GET(vm, vm->R[SP_ID]);
+    if (newIP & 1)
+        return UNALIGNED_MEM_ACCESS;
 
     vm->R[SP_ID] += 2;
-
     vm->IP = newIP;
 
     return CONTINUE;
 }
 
 #define BIN_OV_OP(op) do { \
-    uint8_t a = GET_ARG(instr, 3, 3); \
-    uint8_t b = GET_ARG(instr, 3, 0); \
+    uint64_t a = GET_ARG(instr, 3, 3); \
+    uint64_t b = GET_ARG(instr, 3, 0); \
     int64_t newVal = vm->R[a] op vm->R[b]; \
-    if (newVal < 0 || UINT16_MAX) \
+    if (newVal < 0 || UINT16_MAX < newVal) \
         return OVERFLOW; \
     vm->R[a] = newVal; \
     return CONTINUE; \
@@ -206,11 +212,11 @@ int nop(struct VM *vm, uint16_t instr) {
 }
 
 int jmp(struct VM *vm, uint16_t instr) {
-    int32_t newIP = vm->IP - 1 + (int8_t)GET_ARG(instr, 8, 0);
+    int32_t newIP = vm->IP - 2 + (int8_t)GET_ARG(instr, 8, 0);
     if (newIP < 0 || newIP > ADDR_NUM)
         return OVERFLOW;
     if (newIP & 1)
-        return UNALIGNED_STACK_ACCESS;
+        return UNALIGNED_MEM_ACCESS;
 
     vm->IP = (uint16_t) newIP;
 
@@ -222,11 +228,11 @@ int je(struct VM *vm, uint16_t instr) {
     if (vm->R[a] != 0)
         return CONTINUE;
 
-    int32_t newIP = vm->IP - 1 + (int8_t)GET_ARG(instr, 8, 0);
+    int32_t newIP = vm->IP - 2 + (int8_t)GET_ARG(instr, 8, 0);
     if (newIP < 0 || newIP > ADDR_NUM)
         return OVERFLOW;
     if (newIP & 1)
-        return UNALIGNED_STACK_ACCESS;
+        return UNALIGNED_MEM_ACCESS;
 
     vm->IP = (uint16_t) newIP;
 
@@ -238,11 +244,11 @@ int jne(struct VM *vm, uint16_t instr) {
     if (vm->R[a] == 0)
         return CONTINUE;
 
-    int32_t newIP = vm->IP - 1 + (int8_t)GET_ARG(instr, 8, 0);
+    int32_t newIP = vm->IP - 2 + (int8_t)GET_ARG(instr, 8, 0);
     if (newIP < 0 || newIP > ADDR_NUM)
         return OVERFLOW;
     if (newIP & 1)
-        return UNALIGNED_STACK_ACCESS;
+        return UNALIGNED_MEM_ACCESS;
 
     vm->IP = (uint16_t) newIP;
 
@@ -254,10 +260,11 @@ int in(struct VM *vm, uint16_t instr) {
 
     bool high = (bool) (a & 1U);
     a >>= 1;
+    uint8_t value = (uint8_t) getchar();
     if (high) {
-        vm->R[a] = (uint16_t) ((vm->R[a] & UINT8_MAX) | (getchar() << 8));
+        vm->R[a] = (uint16_t) ((vm->R[a] & UINT8_MAX) | (value << 8));
     } else {
-        vm->R[a] = (uint16_t) ((vm->R[a] & (UINT8_MAX << 8)) | (getchar() << getchar()));
+        vm->R[a] = (uint16_t) ((vm->R[a] & (UINT8_MAX << 8)) | value);
     }
 
     return CONTINUE;
