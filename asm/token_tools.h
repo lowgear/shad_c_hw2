@@ -12,8 +12,8 @@ int RsToId(const char *rx);
 
 bool ParseImm8(const char* str, uint8_t* imm8);
 
-bool ParseSignedImm8(const char* str, uint8_t* imm8);
-
 bool ParseImm4(const char* str, uint8_t* imm4);
 
 void TrimBrackets(char* str);
+
+#define ISMEMOP(a) (((a)[0] == '(' && (a)[strlen((a)) - 1] == ')') ? 1 : 0)

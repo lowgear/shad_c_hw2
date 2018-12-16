@@ -5,7 +5,6 @@
 #include <string.h>
 
 #include "mingw_stdio_fix.h"
-#include "argtools.h"
 #include "utils/error_check_tools.h"
 #include "asm/exit_codes.h"
 #include "utils/vector.h"
@@ -87,8 +86,6 @@ int main(int argc, char *argv[]) {
             CHECK_READ(ReadToken(fp, to, ARG_BUF_SIZE),                  "read first MOV arg from")
             CHECK_READ(ReadToken(fp, from, ARG_BUF_SIZE),                  "read second MOV arg from")
 
-#define ISMEMOP(a) (((a)[0] == '(' && (a)[strlen((a)) - 1] == ')') ? 1 : 0)
-
             if (ParseImm8(from, &imm8)) {
                 CHECK_ARG(IsRs(to), "MOV expected first RS")
 
@@ -136,7 +133,7 @@ instruction = (uint16_t) (((code##u) << 12) \
             instruction = (uint16_t) ((5u << 12) | RxToId(arg));
         } ELIF(CALL) {
             CHECK_READ(ReadToken(fp, arg, ARG_BUF_SIZE), "failed read CALL arg")
-            CHECK_ARG(ParseSignedImm8(arg, &imm8), "CALL expected #imm8")
+            CHECK_ARG(ParseImm8(arg, &imm8), "CALL expected #imm8")
             instruction = (uint16_t) ((6u << 12) | imm8);
         } ELIF(RET) {
             instruction = 14u << 11;
@@ -282,7 +279,7 @@ instruction = (uint16_t) (((code##u) << 11) \
 
     fileType = OUT_FILE_TYPE;
     
-    CHECK_F(fp = fopen(inPath, "w"), "open write", outPath, rv, CANT_OPEN_FILE | fileType, freeInstrs)
+    CHECK_F(fp = fopen(outPath, "w"), "open write", outPath, rv, CANT_OPEN_FILE | fileType, freeInstrs)
     for (size_t i = 0; i < CNT(instructs); ++i) {
         int lower = ID(instructs, i) & UINT8_MAX;
         int upper = (ID(instructs, i) >> 8) & UINT8_MAX;

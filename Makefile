@@ -36,13 +36,22 @@ labels.o: $(SRCD)/asm/labels.c
 asm.o: $(SRCD)/asm.c
 	$(COMPILE_C_SRC)
 
-vm: vm.o strtools.o
+vm: vm.o strtools.o handlers.o handlersarray.o vmstruct.o
 	$(LINK_EXECUTABLE)
+
+handlers.o: $(SRCD)/vm/handlers.c
+	$(COMPILE_C_SRC)
+
+handlersarray.o: $(SRCD)/vm/handlersarray.c
+	$(COMPILE_C_SRC)
+
+vmstruct.o: $(SRCD)/vm/vmstruct.c
+	$(COMPILE_C_SRC)
 
 vm.o: $(SRCD)/vm.c
 	$(COMPILE_C_SRC)
 
-check: check.o gtest-all.o gtest_main.o
+check: check.o gtest-all.o gtest_main.o strtools.o labels.o readtoken.o token_tools.o
 	$(LINK_EXECUTABLE)
 
 check.o: $(SRCD)/check.cpp

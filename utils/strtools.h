@@ -6,4 +6,4 @@ void strToLower(char* str);
 
 void strToUpper(char* str);
 
-bool strIsSpace(char* str);
+bool strIsSpace(const char* str);

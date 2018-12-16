@@ -1,7 +1,9 @@
 #pragma once
 
+#include <inttypes.h>
+
 #include "vmstruct.h"
 
-const size_t HANDLERS_NUM = 32;
+#define HANDLERS_NUM (32)
 
-int (*handlers[HANDLERS_NUM])(struct VM*);
+extern int (*handlers[HANDLERS_NUM])(struct VM*, uint16_t instr);

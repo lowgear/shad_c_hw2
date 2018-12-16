@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <vm/vmstruct.h>
 
 #include "utils/strtools.h"
 #include "utils/error_check_tools.h"
@@ -11,13 +12,12 @@
 #include "vm/exit_codes.h"
 #include "vm/vmstruct.h"
 #include "vm/handlersarray.h"
+#include "vm/inst_return_codes.h"
 
 
 const int ARG_NUM = 3;
 
-const size_t ADDR_NUM = 1 << 15;
-
-uint8_t mem[ADDR_NUM];
+struct VM vm;
 
 int main(int argc, char *argv[]) {
     int rv = 0;
@@ -47,17 +47,39 @@ int main(int argc, char *argv[]) {
           rv = PROGRAM_OUT_OF_MEMORY,
           closeFile)
 
-    CHECK_F(fread(mem + initAddr, sizeof(uint8_t), fileSize, fp) == fileSize,
+    CHECK_F(fread(vm.mem + initAddr, sizeof(uint8_t), fileSize, fp) == fileSize,
             "read whole file", inPath, rv, READ_FAIL, closeFile)
 
     ROLLBACK_F(fclose(fp) == 0, "close", inPath, rv, CANT_CLOSE_FILE)
 
-    struct VM vm;
     initVM(&vm, (uint16_t) initAddr);
 
     for(unsigned long long i = 0; i < maxIters; ++i) {
-        const int code = handlers[mem[vm.IP + 1] >> 11](&vm);
+        const uint16_t instr = ((uint16_t) vm.mem[vm.IP]) | (((uint16_t) vm.mem[vm.IP + 1]) << 8);
+        const uint8_t instrId = (const uint8_t) (instr >> 11);
+
+        vm.IP += 2;
+        const int code = handlers[instrId](&vm, instr);
+
+        switch(code){
+            case RETURN:
+                fprintf(stderr, "%d", vm.R[0] & 255U);
+                goto exit;
+            case CONTINUE:
+                continue;
+#define CASE(cas) case cas : fprintf(stderr, #cas "\n"); goto exit;
+            CASE(DBZ)
+            CASE(UNALIGNED_MEM_ACCESS)
+            CASE(UNALIGNED_STACK_ACCESS)
+            CASE(IO_ERROR)
+            CASE(OVERFLOW)
+#undef CASE
+            default:
+                CHECK(false, "unexpected code from handler", rv = UNEXPECTED_CODE_FROM_HANDLER, exit)
+        }
     }
+
+    goto exit;
 
     closeFile:
     ROLLBACK_F(fclose(fp) == 0, "close", inPath, rv, CANT_CLOSE_FILE)

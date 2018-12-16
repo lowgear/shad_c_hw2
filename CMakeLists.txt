@@ -11,11 +11,20 @@ include_directories(${GTEST} ${GTEST}/include .)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(fake_vm vm.c)
+add_executable(fake_vm vm.c vm/handlersarray.c vm/handlers.c vm/vmstruct.c utils/strtools.c)
 
 add_executable(fake_asm asm.c utils/strtools.c asm/labels.c asm/readtoken.c asm/token_tools.c)
 
-add_executable(fake_tests check.cpp ${GTEST}/src/gtest_main.cc ${GTEST}/src/gtest-all.cc)
+add_executable(
+        fake_tests
+        check.cpp
+        utils/strtools.c
+        asm/labels.c
+        asm/readtoken.c
+        asm/token_tools.c
+        vm/vmstruct.c
+        vm/handlers.c
+        ${GTEST}/src/gtest_main.cc ${GTEST}/src/gtest-all.cc)
 
 #file(RELATIVE_PATH BIN_DIR ${c_asm_vm_SOURCE_DIR} ${PROJECT_BINARY_DIR})
 
