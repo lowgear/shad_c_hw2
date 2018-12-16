@@ -58,6 +58,9 @@ int main(int argc, char *argv[]) {
         const uint16_t instr = ((uint16_t) vm.mem[vm.IP]) | (((uint16_t) vm.mem[vm.IP + 1]) << 8);
         const uint8_t instrId = (const uint8_t) (instr >> 11);
 
+        if (vm.IP > UINT16_MAX - 2) {
+            fprintf(stderr, "OVERFLOW" "\n"); goto exit;
+        }
         vm.IP += 2;
         const int code = handlers[instrId](&vm, instr);
 

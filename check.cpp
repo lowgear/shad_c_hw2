@@ -264,8 +264,8 @@ TEST(ISMEMOP_, Sanity) {
 vm::VM _vm;
 
 TEST(initVM, Sanity) {
-    ASSERT_EQ(vm::REG_NUM, 8);
-    ASSERT_EQ(vm::SP_ID, 7);
+    ASSERT_EQ(vm::REG_NUM, 8ULL);
+    ASSERT_EQ(vm::SP_ID, 7ULL);
 
     for (size_t i = 0; i < vm::REG_NUM; ++i) {
         _vm.R[i] = static_cast<uint16_t>(i + 1);
@@ -569,7 +569,10 @@ TEST(div, Sanity) {
 }
 
 TEST(div, DBZ) {
-    TEST_OP(_div, /, 123, 0, DBZ)
+    _vm.R[0] = 5;
+    _vm.R[1] = 0;
+    int code = vm::_div(&_vm, 0b000'001);
+    ASSERT_EQ(code, vm::DBZ);
 }
 
 TEST(_and, Sanity) {
@@ -651,6 +654,7 @@ TEST(je, Sanity) {
 
 TEST(je, UnalignedMemAccess) {
     _vm.IP = 4;
+    _vm.R[0] = 0;
 
     _vm.IP += 2;
     EXPECT_EQ(vm::je(&_vm, 0b00000111), vm::UNALIGNED_MEM_ACCESS);
@@ -673,6 +677,7 @@ TEST(jne, Sanity) {
 
 TEST(jne, UnalignedMemAccess) {
     _vm.IP = 4;
+    _vm.R[0] = 1;
 
     _vm.IP += 2;
     EXPECT_EQ(vm::jne(&_vm, 0b00000111), vm::UNALIGNED_MEM_ACCESS);

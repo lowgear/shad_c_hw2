@@ -51,7 +51,7 @@ vmstruct.o: $(SRCD)/vm/vmstruct.c
 vm.o: $(SRCD)/vm.c
 	$(COMPILE_C_SRC)
 
-check: check.o gtest-all.o gtest_main.o strtools.o labels.o readtoken.o token_tools.o
+check: check.o gtest-all.o gtest_main.o strtools.o labels.o readtoken.o token_tools.o handlers.o vmstruct.o
 	$(LINK_EXECUTABLE)
 
 check.o: $(SRCD)/check.cpp
